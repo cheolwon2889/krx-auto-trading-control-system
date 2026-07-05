@@ -14,4 +14,9 @@ export class AppController {
   health() {
     return { status : 'ok'};
   }
+
+  @Get('db-health')
+  dbHealth() {
+    return this.appService.getDatabaseHealth();
+  }
 }

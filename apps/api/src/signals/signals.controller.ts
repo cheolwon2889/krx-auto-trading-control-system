@@ -1,5 +1,9 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
-import { SignalsService } from './signals.service';
+import {
+  SignalsService,
+  type SignalsWebhookPayload,
+  type SignalsWebhookResponse,
+} from './signals.service';
 
 @Controller('signals')
 export class SignalsController {
@@ -8,8 +12,8 @@ export class SignalsController {
   @Post('webhook')
   @HttpCode(HttpStatus.ACCEPTED)
   receiveWebhook(
-    @Body() payload: Record<string, unknown>,
-  ): Promise<{ status: 'accepted' }> {
+    @Body() payload: SignalsWebhookPayload,
+  ): Promise<SignalsWebhookResponse> {
     return this.signalsService.receiveWebhook(payload);
   }
 }

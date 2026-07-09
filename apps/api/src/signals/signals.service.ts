@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import { Injectable, ServiceUnavailableException, Logger } from '@nestjs/common';
 import { OrderSide, OrderType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { OrdersService } from '../orders/orders.service'; // 추가
 
 export type SignalsWebhookPayload = Readonly<{
   eventId: string;
@@ -23,7 +24,10 @@ export class SignalsService {
   // 로거 인스턴스 생성
   private readonly logger = new Logger(SignalsService.name);
 
-  constructor(private readonly prismaService: PrismaService) { }
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly ordersService: OrdersService, // 추가
+  ) { }
 
   async receiveWebhook(
     payload: SignalsWebhookPayload,
@@ -42,7 +46,7 @@ export class SignalsService {
       select: { id: true },
     });
 
-    await this.prismaService.tradingSignal.create({
+    const signal = await this.prismaService.tradingSignal.create({
       data: {
         eventId: payload.eventId,
         strategyId: strategy.id,
@@ -55,6 +59,9 @@ export class SignalsService {
         rawPayload: payload,
       },
     });
+
+    // 추가: 저장된 신호를 바탕으로 실제 주문(Order)을 생성하고 상태이력을 기록.
+    await this.ordersService.createOrder(signal.id);
 
     return { status: 'accepted' };
   }

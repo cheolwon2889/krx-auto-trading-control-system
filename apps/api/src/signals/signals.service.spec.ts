@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../prisma/prisma.service';
 import { SignalsService, type SignalsWebhookPayload } from './signals.service';
+import { OrdersService } from '../orders/orders.service';
 
 describe('SignalsService', () => {
   let service: SignalsService;
@@ -25,6 +26,8 @@ describe('SignalsService', () => {
     [{ data: Record<string, unknown> }]
   >();
 
+  const ordersServiceCreateOrder = jest.fn();
+
   const prismaMock = {
     strategy: {
       findUniqueOrThrow: strategyFindUniqueOrThrow,
@@ -38,11 +41,16 @@ describe('SignalsService', () => {
     },
   };
 
+  const ordersServiceMock = {
+    createOrder: ordersServiceCreateOrder,
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SignalsService,
         { provide: PrismaService, useValue: prismaMock },
+        { provide: OrdersService, useValue: ordersServiceMock },
       ],
     }).compile();
     service = module.get(SignalsService);
@@ -55,12 +63,14 @@ describe('SignalsService', () => {
     tradingSignalCreate.mockReset();
     tradingSystemSettingFindFirst.mockReset();
     tradingSignalFindUnique.mockReset();
+    ordersServiceCreateOrder.mockReset();
 
     // 모크 반환값 정의
     strategyFindUniqueOrThrow.mockResolvedValue({ id: 'strategy-1' });
     tradingSignalCreate.mockResolvedValue({ id: 'signal-1' });
     tradingSystemSettingFindFirst.mockResolvedValue({ tradingEnabled: true, stopReason: null });
     tradingSignalFindUnique.mockResolvedValue(null);
+    ordersServiceCreateOrder.mockResolvedValue({ id: 'order-1' });
   });
 
   it('should persist webhook payload with prisma.tradingSignal.create', async () => {
